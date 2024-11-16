@@ -1,16 +1,4 @@
-// Download both files into the same directory and make a copy of this template for each project. Adjust the variables and values as needed to override the defaults in this file as needed. In this way you can replace the `Ultimate_Box_Generator.scad` file with a new version without having to track and restore your changes.
-
-// If you want to use any framework variables in calulations you must import them here. If you want to also change the variable you must use a second line below to do that.
-//wall=wall;
-//internal_wall=internal_wall;
-
-// Include the framework. You can change the prefix to load from a shared path.
 include    <Ultimate_Box_Generator.scad>;
-
-// At this point you can start to adjust builtin varaibles and create your own. There are also some examples of more complex boxes at the end of the file.
-
-
-// Parts to render. To do more complex opperations disable these and manually call make_box() and make_lid() instead.
 show_box=false;	// Whether or not to render the box
 show_lid=false;	// Whether or not to render the lid. To make open boxes with no lid set `show_lid=false` and `lid_type=5`.
 lid_type=0; 
@@ -111,6 +99,12 @@ make_box(internal_type=1);
 // make_complex_box();
 
 // Some notes on complex prints:
-/* OpenSCAD experience is required to do pretty much any type of customization or complex opperations. This will essentialy just make the containers within one larger object with a single lid. Alternatly multiple boxes could be created and joined together with translations to make a larger object with multiple lids. 
-   Due to how variables are passed in OpenSCAD it can be tricky to get the parameters set on the parent box and child boxes as you want. It is best to use global variable assignmets to set the child box parameters, then pass overrides to the `make_box()` call yourself. (You have to set `show_box=false;` if you do this.)
+/* OpenSCAD experience is required to do pretty much any type of customization or 
+   complex opperations. This will essentialy just make the containers within one 
+   larger object with a single lid. Alternatly multiple boxes could be created and 
+   joined together with translations to make a larger object with multiple lids. 
+   Due to how variables are passed in OpenSCAD it can be tricky to get the parameters 
+   set on the parent box and child boxes as you want. It is best to use global variable
+   assignmets to set the child box parameters, then pass overrides to the `make_box()` 
+   call yourself. (You have to set `show_box=false;` if you do this.)
   */
