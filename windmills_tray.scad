@@ -19,14 +19,14 @@ lid_type=0;
 // comp_size_deep = 18; // Depth of compartments
 // comp_size_x = 32;	 // Size of compartments, X
 // comp_size_y = 24.6;	 // Size of compartments, Y
-wall = 1.2;		    // Width of wall, see `internal_wall` below for alternate inner wall size.
-internal_wall=0.8;
+wall = 2;		    // Width of wall, see `internal_wall` below for alternate inner wall size.
+internal_wall=1.2;
 // repeat_x = 3;		// Number of compartments, X
 // repeat_y = 2;		// Number of compartments, Y
 //tolerance=.15;      // Tolerance around lid.  If it's too tight, increase this. If it's too loose, decrease it.
 
 // Box Rounding
-// box_corner_radius=1; // Add a rounding affect to the corners of the box. Anything over `wall` will cause structure and lid problems.
+box_corner_radius=1; // Add a rounding affect to the corners of the box. Anything over `wall` will cause structure and lid problems.
 internal_corner_radius=.5; // Add a rounding affect to the inside.
 //mesh_corner_radius=0; // Leave a radius around each corner of the mesh. May hep with bridges.
 //corner_fn=30;
@@ -92,38 +92,52 @@ faction_size_y=calc_size(faction_repeat_y, faction_y, wall=internal_wall, intern
 }*/
 
 // This exmaple wil make a complex series of boxes in a larger container. The object's can be used to position other oebjects and create internal structure.
-comp_size_x = 188.2; // external size add 2*wall to this
-comp_size_y = 64;    // external width add 2*wall to this
-comp_size_deep = 30; // external height add 2*wall to thist
+comp_size_x = 279; // external size add 2*wall to this
+comp_size_y = 145;    // external width add 2*wall to this
+comp_size_deep = 35.6; // external height add 2*wall to thist
+
+//has_thumbhole=true; // Add gripping locations for easy opening.
+//has_snap=true; // Add small ridges or snaps to lids to help keep them closed.
+//coinslot_x=20;	// Size in X direction
+//coinslot_y=2.5;	
 
 // internal_wall=0.8;
 // make the external box with no internal curves
-//internal_size_deep=comp_size_deep  ;
-internal_grow_down=true;
-make_box(internal_type=0,box_corner_radius=1);
-boxWidth=42;
-offY=(comp_size_y-boxWidth)/2;
-box_corner_radius=0; // Add a rounding affect to the corners of the box. Anything over `wall` will cause structure and lid problems.
-comp1=make_object( x=82    ,y=boxWidth ,z=28, offset_x=0    ,offset_y=offY, repeat_x=1, repeat_y=1, color="Blue");
-comp2=make_object( x=52.3  ,y=boxWidth ,z=28, offset_x=82.8 ,offset_y=offY, repeat_x=1, repeat_y=1, color="green");
-comp3=make_object( x=52.3  ,y=boxWidth ,z=28, offset_x=135.9,offset_y=offY, repeat_x=1, repeat_y=1, color="orange");
-complex_box=[
-   comp1,comp2,comp3
-];
-// make the internal compartments
-internal_type=2; // Internal structure, see above.
-//internal_rotate=false; // On lid axis or rotate to opposite.
-internal_size_deep=15; // How far into the box to start the internal structure. Should be `comp_size_deep/2` for type 1-2, `wall` for 3, or comp_size_deep for type 4-5.
-internal_size_circle=internal_type==1 ? internal_size_deep : internal_size_deep * 2 / sqrt(3); 
-make_complex_box(internal_type=1,internal_wall=0.8);
+// Supress individual walls.
+//supress_walls_x=[]; // These are the walls running along the X axis. It should be an array of size [repeat_y-1][repeat_x].
+//supress_walls_y=[]; // These are the walls running along the Y axis. It should be an array of size [repeat_x-1][repeat_y].
+// Example for repeat_x=4, repeat_y=3:
+//supress_walls_x=[[1,0,1,1],[0,1,0,1]];
+//supress_walls_y=[[1,0,1],[0,1,1],[1,1,1]];
+supress_walls=[1,0];
 
+//supress_walls_y=[[1,1,1,1]]; // Cutout/supress some sides. this may behave baddly with compartments or mesh.
+//supress_sides_radius=20; // Add a rounding to the cutout.
+//supress_sides_offset=0; // 0, wall, [X, Y, Z] adjsut the coutout in all directions. + to grow, - so shrink
+//supress_sides_fn=30;
+
+// Semi-circular cutout 
+cut_offset = ((comp_size_x+wall))/2;
+internal_type=0;
+myx = 225;
+myoffset = (comp_size_x - myx)/2;
+comp2=make_object( x=myx, y=145, z=35.6, offset_x=myoffset, offset_y=0, repeat_x=1, repeat_y=1, color="Blue");
+complex_box=[comp2];
+difference() {
+    {
+        union() {       
+            make_box(internal_type=0);
+            // make the internal compartments
+            make_complex_box();
+        }
+    } 
+ 
+
+    translate([cut_offset, 0, 52]) // Position the cutout 
+    rotate([0, -90, -90]) // Rotate to align properly 
+    cylinder(h=10, r=50, center=true); // Semi-circular cutout
+}
 // Some notes on complex prints:
-/* OpenSCAD experience is required to do pretty much any type of customization 
-   or complex opperations. This will essentialy just make the containers within 
-   one larger object with a single lid. Alternatly multiple boxes could be created 
-   and joined together with translations to make a larger object with multiple lids. 
-   Due to how variables are passed in OpenSCAD it can be tricky to get the parameters 
-   set on the parent box and child boxes as you want. It is best to use global variable
-   assignmets to set the child box parameters, then pass overrides to the `make_box()` 
-   call yourself. (You have to set `show_box=false;` if you do this.)
+/* OpenSCAD experience is required to do pretty much any type of customization or complex opperations. This will essentialy just make the containers within one larger object with a single lid. Alternatly multiple boxes could be created and joined together with translations to make a larger object with multiple lids. 
+   Due to how variables are passed in OpenSCAD it can be tricky to get the parameters set on the parent box and child boxes as you want. It is best to use global variable assignmets to set the child box parameters, then pass overrides to the `make_box()` call yourself. (You have to set `show_box=false;` if you do this.)
   */
