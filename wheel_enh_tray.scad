@@ -7,6 +7,101 @@
 // Include the framework. You can change the prefix to load from a shared path.
 include    <Ultimate_Box_Generator.scad>;
 
+// Compatibility shims for strict named-argument validation in newer OpenSCAD builds.
+// These mirror generator behavior without modifying Ultimate_Box_Generator.scad.
+function calc_size(repeat, comp_size, internal_wall=internal_wall, wall=wall) = repeat * (comp_size + internal_wall) - internal_wall + wall*2;
+function calc_offset(repeat, comp_size, internal_wall=internal_wall, wall=wall) = repeat * (comp_size + internal_wall) + wall;
+
+module make_box_internal(comp_size_x=comp_size_x, comp_size_y=comp_size_y, internal_size_deep=internal_size_deep, internal_type=internal_type, repeat_x=repeat_x, repeat_y=repeat_y, internal_fn=internal_fn, internal_rotate=internal_rotate, wall=wall, internal_wall=internal_wall) {
+    internal_size_circle = internal_type == 1 ? internal_size_deep : internal_size_deep * 2 / sqrt(3);
+
+    for ( ybox = [ 0 : repeat_y - 1])
+    {
+        for( xbox = [ 0 : repeat_x - 1])
+        {
+            offset_x=calc_offset(xbox, comp_size_x, internal_wall=internal_wall, wall=wall);
+            offset_y=calc_offset(ybox, comp_size_y, internal_wall=internal_wall, wall=wall);
+            render() {
+                if(internal_type == 1 || internal_type == 2) {
+                    translate([offset_x - (internal_rotate ? 0 : internal_wall), offset_y + (internal_rotate ? comp_size_y + internal_wall : 0), wall + internal_size_deep])
+                    rotate([internal_rotate ? 90 : 0,90,0])
+                    linear_extrude(internal_rotate ? comp_size_y + internal_wall*2: comp_size_x + internal_wall*2)
+                    difference() {
+                        square([internal_size_deep, internal_rotate ? comp_size_x: comp_size_y]);
+                        hull() {
+                            translate([0, internal_size_circle, 0])
+                            rotate([0,0,90])
+
+                            if(!internal_rotate && supress_walls_x[ybox-1][xbox] || internal_rotate && supress_walls_y[xbox-1][ybox])
+                                square([internal_size_circle*2, internal_size_circle*2], center=true);
+                            else
+                                circle(r=internal_size_circle, $fn=internal_fn);
+
+                            if((internal_rotate ? comp_size_x : comp_size_y) != internal_size_circle*2)
+                                translate([0, (internal_rotate ? comp_size_x : comp_size_y) - internal_size_circle, 0])
+                                rotate([0,0,90])
+                            if(!internal_rotate && supress_walls_x[ybox][xbox] || internal_rotate && supress_walls_y[xbox][ybox])
+                                square([internal_size_circle*2, internal_size_circle*2], center=true);
+                             else
+                                 circle(r=internal_size_circle, $fn=internal_fn);
+                        }
+                    }
+                }
+                if(internal_type == 3) {
+                    internal_width = sqrt(internal_size_deep*internal_size_deep*2);
+                    internal_items = ((internal_rotate ? comp_size_y : comp_size_x) - wall*2) / (internal_width*1.5);
+                    internal_offset = (internal_items - floor(internal_items)) * internal_width;
+
+                    rotate([0, 0, internal_rotate ? 90 : 0])
+                    translate([offset_x, offset_y + (internal_rotate ? - comp_size_y - wall*2 : 0), internal_size_deep])
+                    for(c=[0:internal_items]) {
+                        translate([internal_offset + c * internal_width*1.5, 0, 0])
+                        rotate([0,45,0])
+                        cube([wall, comp_size_y + internal_wall, internal_size_deep]);
+                    }
+                }
+            }
+            if(internal_type == 4 || internal_type==5) {
+                translate([offset_x, offset_y, wall])
+                difference() {
+                    cube([comp_size_x, comp_size_y, internal_size_deep]);
+
+                    linear_extrude(internal_size_deep + .01)
+                    translate([internal_size_circle/2 ,internal_size_circle/2 , internal_size_circle/2 ])
+                    hull() {
+                        circle(d=internal_size_circle, $fn=internal_fn);
+                        if(comp_size_x-internal_size_circle > 0) {
+                            translate([comp_size_x-internal_size_circle, 0])
+                            circle(d=internal_size_circle, $fn=internal_fn);
+                        }
+                        if(comp_size_y-internal_size_circle > 0) {
+                            translate([0, comp_size_y-internal_size_circle])
+                            circle(d=internal_size_circle, $fn=internal_fn);
+                        }
+                        if(comp_size_x-internal_size_circle > 0 && comp_size_y-internal_size_circle > 0) {
+                            translate([comp_size_x-internal_size_circle, comp_size_y-internal_size_circle])
+                            circle(d=internal_size_circle, $fn=internal_fn);
+                        }
+                    }
+                }
+            }
+            if(internal_corner_radius) {
+                translate([offset_x + (supress_walls_y[xbox-1][ybox] ? internal_corner_radius : 0), offset_y + (supress_walls_x[ybox-1][xbox] ? internal_corner_radius : 0), wall])
+                difference() {
+
+                    cube([comp_size_x - (supress_walls_y[xbox][ybox] || supress_walls_y[xbox-1][ybox] ? internal_corner_radius : 0), comp_size_y - (supress_walls_x[ybox][xbox] || supress_walls_x[ybox-1][xbox] ? internal_corner_radius : 0), comp_size_deep]);
+
+                    translate([min(comp_size_x/2, internal_corner_radius) - (supress_walls_y[xbox-1][ybox] ? internal_corner_radius : 0), min(comp_size_y/2, internal_corner_radius) - (supress_walls_x[ybox-1][xbox] ? internal_corner_radius : 0), internal_corner_radius])
+                    minkowski() {
+                        sphere(r=internal_corner_radius, $fn=corner_fn);
+                        cube([max(.01, comp_size_x-internal_corner_radius*2), max(.01, comp_size_y-internal_corner_radius*2), max(.01, comp_size_deep*1.5 - internal_corner_radius*2)]);
+                    }
+                }
+            }
+        }
+    }
+}
+
 // At this point you can start to adjust builtin varaibles and create your own. There are also some examples of more complex boxes at the end of the file.
 
 
@@ -94,28 +189,72 @@ faction_size_y=calc_size(faction_repeat_y, faction_y, wall=internal_wall, intern
 // This exmaple wil make a complex series of boxes in a larger container. The object's can be used to position other oebjects and create internal structure.
 comp_size_x = 188.2; // external size add 2*wall to this
 comp_size_y = 64;    // external width add 2*wall to this
-comp_size_deep = 30; // external height add 2*wall to thist
+comp_size_deep = 28; // external height add 2*wall to this
+
+growdown_bottom_width = 15;
+growdown_start_height = 20;
+u_cut_size = 20;
+
+module make_compartment_growdown(area, bottom_width, start_height) {
+    top_width = area[0][1];
+    side_growdown_width = (top_width - bottom_width) / 2;
+
+    if (side_growdown_width > 0 && start_height > 0) {
+        translate([wall + area[1][0], wall + area[1][1], wall])
+        hull() {
+            cube([area[0][0], side_growdown_width, .01]);
+            translate([0, 0, start_height])
+            cube([area[0][0], .01, .01]);
+        }
+
+        translate([wall + area[1][0], wall + area[1][1] + top_width - side_growdown_width, wall])
+        hull() {
+            cube([area[0][0], side_growdown_width, .01]);
+            translate([0, side_growdown_width - .01, start_height])
+            cube([area[0][0], .01, .01]);
+        }
+    }
+}
+
+module make_compartment_u_cut(area, cut_size) {
+    translate([wall + area[1][0] - wall - .5, wall + area[1][1] + area[0][1] / 2, wall + comp_size_deep])
+    rotate([0, 90, 0])
+    cylinder(h=area[0][0] + wall * 2 + 1, d=cut_size, $fn=40);
+}
 
 // internal_wall=0.8;
 // make the external box with no internal curves
 //internal_size_deep=comp_size_deep  ;
 internal_grow_down=true;
-make_box(internal_type=0,box_corner_radius=1);
+internal_type=0;
+box_corner_radius=1;
 boxWidth=42;
-offY=(comp_size_y-boxWidth)/2;
+compartmentDepth=comp_size_deep;
+offY=0;
 box_corner_radius=0; // Add a rounding affect to the corners of the box. Anything over `wall` will cause structure and lid problems.
-comp1=make_object( x=82    ,y=boxWidth ,z=28, offset_x=0    ,offset_y=offY, repeat_x=1, repeat_y=1, color="Blue");
-comp2=make_object( x=52.3  ,y=boxWidth ,z=28, offset_x=82.8 ,offset_y=offY, repeat_x=1, repeat_y=1, color="green");
-comp3=make_object( x=52.3  ,y=boxWidth ,z=28, offset_x=135.9,offset_y=offY, repeat_x=1, repeat_y=1, color="orange");
+comp1=make_object( x=82    ,y=boxWidth ,z=compartmentDepth, offset_x=0    ,offset_y=offY, repeat_x=1, repeat_y=1, color="Blue");
+comp2=make_object( x=52.3  ,y=boxWidth ,z=compartmentDepth, offset_x=82.8 ,offset_y=offY, repeat_x=1, repeat_y=1, color="green");
+comp3=make_object( x=52.3  ,y=boxWidth ,z=compartmentDepth, offset_x=135.9,offset_y=offY, repeat_x=1, repeat_y=1, color="orange");
 complex_box=[
    comp1,comp2,comp3
 ];
 // make the internal compartments
-internal_type=2; // Internal structure, see above.
+internal_type=0; // Keep compartment walls straight (no curved internal profile).
 //internal_rotate=false; // On lid axis or rotate to opposite.
-internal_size_deep=15; // How far into the box to start the internal structure. Should be `comp_size_deep/2` for type 1-2, `wall` for 3, or comp_size_deep for type 4-5.
-internal_size_circle=internal_type==1 ? internal_size_deep : internal_size_deep * 2 / sqrt(3); 
-make_complex_box(internal_type=1,internal_wall=0.8);
+internal_corner_radius=0; // Keep compartment corners straight for the grow-down section.
+difference() {
+    union() {
+        make_box();
+        make_complex_box();
+        make_compartment_growdown(comp1, growdown_bottom_width, growdown_start_height);
+        make_compartment_growdown(comp2, growdown_bottom_width, growdown_start_height);
+        make_compartment_growdown(comp3, growdown_bottom_width, growdown_start_height);
+    }
+
+    make_compartment_u_cut(comp1, u_cut_size);
+    make_compartment_u_cut(comp2, u_cut_size);
+    make_compartment_u_cut(comp3, u_cut_size);
+}
 
 // Some notes on complex prints:
 /* OpenSCAD experience is required to do pretty much any type of customization 
