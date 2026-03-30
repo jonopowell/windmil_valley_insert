@@ -92,20 +92,21 @@ faction_size_y=calc_size(faction_repeat_y, faction_y, wall=internal_wall, intern
 }*/
 
 // This exmaple wil make a complex series of boxes in a larger container. The object's can be used to position other oebjects and create internal structure.
-comp_size_x = 92-(2*12); // external size add 2*wall to this
-comp_size_y = 2*64;    // external width add 2*wall to this
+comp_size_x = 92 - (2 * 1.2); // external size add 2*wall to this
+comp_size_y = 2 * ( 64 + 1.2 );    // external width add 2*wall to this
 comp_size_deep = 8; // external height add 2*wall to thist
 
 // internal_wall=0.8;
 // make the external box with no internal curves
 make_box(internal_type=0);
+/*
 internal_type=1;
 internal_size_deep=comp_size_deep  ;
 comp2=make_object( x=32.2, y=31.6, z=20, offset_x=90, offset_y=0, repeat_x=3, repeat_y=2, color="Blue");
 
 complex_box=[
    comp2   
-];
+]; */
 // make the internal compartments
 make_complex_box();
 
