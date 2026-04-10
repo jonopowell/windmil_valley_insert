@@ -92,9 +92,9 @@ faction_size_y=calc_size(faction_repeat_y, faction_y, wall=internal_wall, intern
 }*/
 
 // This exmaple wil make a complex series of boxes in a larger container. The object's can be used to position other oebjects and create internal structure.
-comp_size_x = 92-(2*12); // external size add 2*wall to this
+comp_size_x = 92-(2*1.2); // external size add 2*wall to this
 comp_size_y = 64;    // external width add 2*wall to this
-comp_size_deep = 23; // external height add 2*wall to thist
+comp_size_deep = 20; // external height add 2*wall to thist
 
 // internal_wall=0.8;
 // make the external box with no internal curves
@@ -105,9 +105,11 @@ comp2=make_object( x=32.2, y=31.6, z=20, offset_x=90, offset_y=0, repeat_x=3, re
 
 complex_box=[
    comp2   
-];
-// make the internal compartments
+];// make the internal compartments
 make_complex_box();
+
+// Add block under the pot: 1.2mm smaller all around, 0.5mm deep
+// color("red") translate([wall, wall, -0.5]) cube([comp_size_x, comp_size_y, 0.5]);
 
 // Some notes on complex prints:
 /* OpenSCAD experience is required to do pretty much any type of customization or complex opperations. This will essentialy just make the containers within one larger object with a single lid. Alternatly multiple boxes could be created and joined together with translations to make a larger object with multiple lids. 
